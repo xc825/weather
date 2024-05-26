@@ -4,7 +4,7 @@ use open_meteo_api::query::OpenMeteo;
 use open_meteo_api::models::{OpenMeteoData};
 use tokio::runtime::Runtime;
 use std::ffi::CString;
-use serde_json::Value;
+use serde_json::{error, Value};
 
 enum Location {
     City(String),
@@ -32,6 +32,7 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
     };
     let location_enum = parse_location(location_str);
     let rt = Runtime::new().unwrap();
+
     let meteo_data: Option<OpenMeteoData> = match location_enum {
         Ok(location) => {
             let fetched_data: Result<OpenMeteoData, Box<dyn Error>> = rt.block_on(async {
@@ -50,10 +51,8 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
         None => "Some error occurred.".to_string()
     };
     match meteo_data.as_ref() {
-        Some(data) => {
-            println!("data: {:?}", data);
-        }
-        None => println!("Error: could not fetch weather data for the location"),
+        Some(data) => println!("data: {:?}", data),
+        None => println!("{}:{}:Error: could not fetch weather data for the location", file!(), line!()),
     }
 
     let meteo_data_str = format!("{:?}", temperature);
@@ -74,19 +73,21 @@ async fn fetch_weather(location_enum: Location) -> Result<OpenMeteoData, Box<dyn
                 let lat_lon = get_coordinates(&city).await;
                 match lat_lon {
                     Ok(Location::Coordinates(lat, lon)) => Ok(open_meteo.coordinates(lat, lon)),
-                    _ => Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid coordinates"))),
+                    Err(e) => Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))),
+                    Ok(_) => Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "This should not happen"))),
                 }
             }
             Location::Coordinates(lat, lon) => Ok(open_meteo.coordinates(lat, lon)),
     };
     let open_meteo = match open_meteo {
         Ok(om) => Ok(om.unwrap().current_weather()),
-        Err(_) => Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid coordinates"))),
+        Err(e) => Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string()))),
     };
     
     let data = match open_meteo {
         Ok(om) => om?.query().await,
-        Err(_) => Err("Failed to fetch weather data".into()),
+        //Err(e) => Err("Failed to fetch weather data".into()),
+        Err(e) => Err(e.to_string().into()),
     };
 
     Ok(data?)
@@ -96,9 +97,16 @@ async fn get_coordinates(place_name: &str) -> Result<Location, Box<dyn Error>> {
     let url = format!("https://geocode.maps.co/search?q={}", place_name);
     let response = reqwest::get(url).await?.text().await?;
 
+    let mut error_msg = "";
     let json: Value = match serde_json::from_str(&response) {
         Ok(json) => json,
-        Err(_) => return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid place name"))),
+        Err(_) => {
+            println!("{}:{}:response:{}", file!(), line!(), response);
+            if response.contains("Missing API Key"){
+                error_msg = "api_key issue";
+            }
+            return Err(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidInput, error_msg.to_string())));
+        },
     };
 
     let (lat, lon) = 
@@ -115,4 +123,14 @@ async fn get_coordinates(place_name: &str) -> Result<Location, Box<dyn Error>> {
     Ok(result?)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn test_parse_location_invalid_coordinates() {
+        let location = "40.7128,abc";
+        let result = parse_location(location);
+        assert!(result.is_err());
+    }
+}
