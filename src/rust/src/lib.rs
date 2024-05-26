@@ -4,7 +4,7 @@ use open_meteo_api::query::OpenMeteo;
 use open_meteo_api::models::{OpenMeteoData};
 use tokio::runtime::Runtime;
 use std::ffi::CString;
-use serde_json::{error, Value};
+use serde_json::{Value};
 
 enum Location {
     City(String),
@@ -33,6 +33,8 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
     let location_enum = parse_location(location_str);
     let rt = Runtime::new().unwrap();
 
+    //let mut that_api_key_error = String::new();
+
     let meteo_data: Option<OpenMeteoData> = match location_enum {
         Ok(location) => {
             let fetched_data: Result<OpenMeteoData, Box<dyn Error>> = rt.block_on(async {
@@ -40,7 +42,7 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
             });
             match fetched_data {
                 Ok(data) => Some(data),
-                Err(_) => None,
+                Err(e) => None,
             }
         }
         Err(_) => None,
@@ -86,7 +88,6 @@ async fn fetch_weather(location_enum: Location) -> Result<OpenMeteoData, Box<dyn
     
     let data = match open_meteo {
         Ok(om) => om?.query().await,
-        //Err(e) => Err("Failed to fetch weather data".into()),
         Err(e) => Err(e.to_string().into()),
     };
 
@@ -134,3 +135,4 @@ mod tests {
         assert!(result.is_err());
     }
 }
+
