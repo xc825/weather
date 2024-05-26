@@ -1,6 +1,7 @@
 bin_PROGRAMS = weather
 weather_SOURCES = main.c
-weather_CPPFLAGS = -I./include -I./../../telebot/include
+weather_CPPFLAGS = -I./include -I./../../telebot/include 
+#	-I/usr/include/apr-1.0
 weather_LDFLAGS = -pthread -L./../../telebot/Build
 weather_LDADD = $(METEO_LIB) -ltelebot_static -ldl -lgcc_s -lutil -lrt\
 				-lpthread -lm -lc -lssl -lcrypto -ljson-c -lcurl
@@ -20,4 +21,3 @@ clean-local:
 	rm -f ./rust/target/debug/libmeteo.a
 
 #cd rust && cargo clean
-

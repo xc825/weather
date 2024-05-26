@@ -135,4 +135,3 @@ int bot_run(telebot_handler_t handle)
 
     return ret;
 }
-

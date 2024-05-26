@@ -42,7 +42,7 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
             });
             match fetched_data {
                 Ok(data) => Some(data),
-                Err(e) => None,
+                Err(_e) => None,
             }
         }
         Err(_) => None,
@@ -52,6 +52,7 @@ pub extern "C" fn weather(location: *const i8, response: *mut u8, response_buffe
         Some(data) => data.current_weather.as_ref().unwrap().temperature.to_string(),
         None => "Some error occurred.".to_string()
     };
+
     match meteo_data.as_ref() {
         Some(data) => println!("data: {:?}", data),
         None => println!("{}:{}:Error: could not fetch weather data for the location", file!(), line!()),
