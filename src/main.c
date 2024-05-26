@@ -15,7 +15,7 @@ int bot_run(telebot_handler_t handle);
 int main()
 {
     char token[1024];
-    char token_file_path[1024] = ".token";
+    char token_file_path[1024] = "token.txt";
     telebot_handler_t handle;
     telebot_user_t me;
 
