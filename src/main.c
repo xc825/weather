@@ -10,9 +10,24 @@
 
 int main()
 {
-    printf("Calling Rust function from C...\n");
-    rust_function();
+    printf("main()\n");
+    char weather_buffer[1024];
 
+    weather("Riga", weather_buffer, SIZE_OF_ARRAY(weather_buffer));
+    printf("Weather in Riga: %s\n", weather_buffer);
+
+    weather("Tallinn", weather_buffer, SIZE_OF_ARRAY(weather_buffer));
+    printf("Weather in Tallinn: %s\n", weather_buffer);
+    
+    char *location = "56.9496,24.1052";
+    weather("57.0614,23.3084", weather_buffer, SIZE_OF_ARRAY(weather_buffer));
+    printf("Weather in [56.9496,24.1052]: %s\n", weather_buffer);
+    
+    weather("ldkgnjldsnfgldfsn", weather_buffer, SIZE_OF_ARRAY(weather_buffer));
+    printf("weather in ldkgnjldsnfgldfsn: %s\n", weather_buffer);
+
+    //rust_function();
+/*
     printf("Welcome to Echobot\n");
 
     FILE *fp = fopen(".token", "r");
@@ -101,6 +116,7 @@ int main()
     }
 
     telebot_destroy(handle);
+*/
 
     return 0;
 }
