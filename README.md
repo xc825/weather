@@ -3,7 +3,7 @@ Telegram weather bot
 
 ## Building steps
 
-1. Clone this repository in Github
+1. Fork or clone this repository in Github
 2. Create new Github codespace from repostitoy
 3. clone and compile _telebot_
 ```
